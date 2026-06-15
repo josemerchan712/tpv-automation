@@ -14,6 +14,12 @@ def test_list_categories_unauthenticated(client):
     assert resp.status_code == 401
 
 
+def test_list_categories_cashier_can_read(client, cashier_headers):
+    resp = client.get("/categories", headers=cashier_headers)
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+
+
 def test_create_category_admin(client, admin_headers):
     resp = client.post("/categories", json={"nombre": "Bebidas"}, headers=admin_headers)
     assert resp.status_code == 201

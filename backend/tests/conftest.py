@@ -5,6 +5,8 @@ from fastapi.testclient import TestClient
 
 from app.database import Base, get_db
 from app.main import app
+from app.models.user import User, UserRole
+from app.services.auth_service import get_password_hash
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 
@@ -44,10 +46,6 @@ def client(db):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
-
-
-from app.models.user import User, UserRole
-from app.services.auth_service import get_password_hash
 
 
 @pytest.fixture
