@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Environment & secrets
+.env
+*.env
+
+# Database
+*.db
+*.sqlite3
+
+# Alembic (keep versions tracked, exclude only the DB)
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.cache/
+
+# Claude
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
