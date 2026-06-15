@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from app.config import settings
 from app.database import engine, Base
 import app.models  # noqa: F401 — registers all models with Base.metadata
-from app.routers import auth
+from app.routers import auth, categories
 
 
 @asynccontextmanager
@@ -25,6 +25,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="TPV Automation", version="0.1.0", lifespan=lifespan)
 
 app.include_router(auth.router)
+app.include_router(categories.router)
 
 
 @app.get("/health")
