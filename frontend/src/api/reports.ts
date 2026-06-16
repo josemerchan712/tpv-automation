@@ -28,13 +28,15 @@ export interface TopProductOut {
   total_importe: string
 }
 
-export const fetchDailyClose = (fecha: string) =>
-  apiClient.get<DailyCloseOut>(`/reports/daily-close?fecha=${fecha}`)
+export const fetchDailyClose = (fecha: string) => {
+  const params = new URLSearchParams({ fecha })
+  return apiClient.get<DailyCloseOut>(`/reports/daily-close?${params}`)
+}
 
 export const fetchLowStock = () =>
   apiClient.get<LowStockProductOut[]>('/reports/low-stock')
 
-export const fetchTopProducts = (fechaDesde: string, fechaHasta: string) =>
-  apiClient.get<TopProductOut[]>(
-    `/reports/top-products?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`,
-  )
+export const fetchTopProducts = (fechaDesde: string, fechaHasta: string) => {
+  const params = new URLSearchParams({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta })
+  return apiClient.get<TopProductOut[]>(`/reports/top-products?${params}`)
+}
