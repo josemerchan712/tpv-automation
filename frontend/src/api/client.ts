@@ -26,11 +26,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const body = await res.json().catch(() => ({ detail: res.statusText }))
     const raw = body?.detail
     const message =
-      typeof raw === 'string'
+      typeof raw === 'string' && raw.length > 0
         ? raw
         : Array.isArray(raw)
           ? (raw as { msg?: string }[]).map((e) => e.msg ?? String(e)).join('; ')
-          : res.statusText
+          : `Error ${res.status}`
     throw new Error(message)
   }
 

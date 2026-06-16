@@ -47,6 +47,7 @@ export default function SalesPage() {
     onError: (err: unknown) => {
       const message = err instanceof Error ? err.message : 'Error al registrar la venta'
       setError(message)
+      queryClient.invalidateQueries({ queryKey: ['products'] })
     },
   })
 
@@ -168,7 +169,10 @@ export default function SalesPage() {
           onDecrement={handleDecrement}
           onRemove={handleRemove}
           paymentMethod={paymentMethod}
-          onPaymentChange={setPaymentMethod}
+          onPaymentChange={(method) => {
+            setPaymentMethod(method)
+            setError(null)
+          }}
           onConfirm={handleConfirm}
           isSubmitting={saleMutation.isPending}
           error={error}
