@@ -365,11 +365,11 @@ def test_get_sales_requires_auth(client):
 
 def test_get_sales_returns_list(client, admin_headers, db):
     prod = _make_product(db, stock=100)
-    client.post(
+    assert client.post(
         "/sales",
         json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 1}]},
         headers=admin_headers,
-    )
+    ).status_code == 201
     resp = client.get("/sales", headers=admin_headers)
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
@@ -378,11 +378,11 @@ def test_get_sales_returns_list(client, admin_headers, db):
 
 def test_get_sales_list_items_have_no_line_items(client, admin_headers, db):
     prod = _make_product(db, stock=100)
-    client.post(
+    assert client.post(
         "/sales",
         json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 1}]},
         headers=admin_headers,
-    )
+    ).status_code == 201
     resp = client.get("/sales", headers=admin_headers)
     first = resp.json()[0]
     assert "items" not in first
@@ -393,11 +393,11 @@ def test_get_sales_list_items_have_no_line_items(client, admin_headers, db):
 def test_get_sales_date_filter_query_param(client, admin_headers, db):
     from datetime import date, timedelta
     prod = _make_product(db, stock=100)
-    client.post(
+    assert client.post(
         "/sales",
         json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 1}]},
         headers=admin_headers,
-    )
+    ).status_code == 201
     tomorrow = (date.today() + timedelta(days=1)).isoformat()
     resp = client.get(f"/sales?fecha_inicio={tomorrow}", headers=admin_headers)
     assert resp.status_code == 200
