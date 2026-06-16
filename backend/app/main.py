@@ -1,4 +1,3 @@
-import logging
 import warnings
 from contextlib import asynccontextmanager
 
@@ -6,8 +5,8 @@ from fastapi import FastAPI
 
 from app.config import settings
 from app.database import engine, Base
-import app.models  # noqa: F401 — registers all models with Base.metadata
-from app.routers import auth, categories
+import app.models  # noqa: F401
+from app.routers import auth, categories, products
 
 
 @asynccontextmanager
@@ -26,6 +25,7 @@ app = FastAPI(title="TPV Automation", version="0.1.0", lifespan=lifespan)
 
 app.include_router(auth.router)
 app.include_router(categories.router)
+app.include_router(products.router)
 
 
 @app.get("/health")
