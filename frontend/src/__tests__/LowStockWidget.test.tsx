@@ -39,6 +39,8 @@ describe('LowStockWidget', () => {
     render(<LowStockWidget />, { wrapper: makeWrapper() })
     await waitFor(() => expect(screen.getByText('Café')).toBeInTheDocument())
     expect(screen.getByText('Azúcar')).toBeInTheDocument()
+    expect(screen.getByText('2/10')).toBeInTheDocument()
+    expect(screen.getByText('1/5')).toBeInTheDocument()
   })
 
   it('muestra badge "Sin stock" para productos con stock 0', async () => {
@@ -64,5 +66,29 @@ describe('LowStockWidget', () => {
     await waitFor(() =>
       expect(screen.getByText(/error al cargar alertas de stock/i)).toBeInTheDocument(),
     )
+  })
+
+  it('oculta la lista cuando hay error con datos previos (stale guard)', async () => {
+    vi.mocked(reportsApi.fetchLowStock)
+      .mockResolvedValueOnce([{ id: 1, nombre: 'Café', stock: 2, stock_minimo: 10 }])
+      .mockRejectedValueOnce(new Error('Error de red'))
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    function Wrapper({ children }: { children: React.ReactNode }) {
+      return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    }
+
+    render(<LowStockWidget />, { wrapper: Wrapper })
+
+    await waitFor(() => expect(screen.getByText('Café')).toBeInTheDocument())
+
+    await queryClient.invalidateQueries({ queryKey: ['reports', 'low-stock'] })
+
+    await waitFor(() =>
+      expect(screen.getByText(/error al cargar alertas de stock/i)).toBeInTheDocument(),
+    )
+    expect(screen.queryByText('Café')).not.toBeInTheDocument()
   })
 })

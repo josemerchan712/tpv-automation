@@ -20,7 +20,7 @@ export default function LowStockWidget() {
           Sin alertas — todos los productos tienen stock suficiente.
         </p>
       )}
-      {data.length > 0 && (
+      {!isLoading && !isError && data.length > 0 && (
         <ul className="space-y-2">
           {data.map((product) => (
             <li
