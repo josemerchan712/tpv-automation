@@ -201,16 +201,21 @@ def test_get_sales_returns_all(db, admin_user):
     sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.tarjeta,
                              items=[{"product_id": prod.id, "cantidad": 1}])
     sales = sale_service.get_sales(db)
-    assert len(sales) >= 2
+    assert len(sales) == 2
 
 
 def test_get_sales_ordered_newest_first(db, admin_user):
+    from datetime import datetime, UTC
     from app.services import sale_service
     prod = _make_product(db, stock=100)
     s1 = sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
                                   items=[{"product_id": prod.id, "cantidad": 1}])
     s2 = sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
                                   items=[{"product_id": prod.id, "cantidad": 1}])
+    # Force deterministic timestamps so same-second inserts don't cause non-determinism
+    s1.fecha = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
+    s2.fecha = datetime(2024, 1, 2, 12, 0, 0, tzinfo=UTC)
+    db.commit()
     sales = sale_service.get_sales(db)
     ids = [s.id for s in sales]
     assert ids.index(s2.id) < ids.index(s1.id)
@@ -227,15 +232,27 @@ def test_get_sales_date_filter_excludes_future(db, admin_user):
     assert len(future_sales) == 0
 
 
-def test_get_sales_date_filter_includes_today(db, admin_user):
-    from datetime import date
+def test_get_sales_date_filter_includes_today_excludes_past(db, admin_user):
+    from datetime import date, datetime, timedelta, UTC
     from app.services import sale_service
     prod = _make_product(db, stock=100)
-    sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
-                             items=[{"product_id": prod.id, "cantidad": 1}])
+    today_sale = sale_service.create_sale(
+        db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
+        items=[{"product_id": prod.id, "cantidad": 1}],
+    )
+    past_sale = sale_service.create_sale(
+        db, user_id=admin_user.id, metodo_pago=PaymentMethod.tarjeta,
+        items=[{"product_id": prod.id, "cantidad": 1}],
+    )
+    # Force past_sale to yesterday to prove fecha_fin boundary works
+    past_sale.fecha = datetime.combine(
+        date.today() - timedelta(days=1), datetime.min.time()
+    ).replace(tzinfo=UTC)
+    db.commit()
     today = date.today()
     today_sales = sale_service.get_sales(db, fecha_inicio=today, fecha_fin=today)
-    assert len(today_sales) >= 1
+    assert len(today_sales) == 1
+    assert today_sales[0].id == today_sale.id
 
 
 def test_get_sale_returns_sale_with_items(db, admin_user):
