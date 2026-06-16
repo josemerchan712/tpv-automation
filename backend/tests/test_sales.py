@@ -172,3 +172,20 @@ def test_create_sale_product_not_found_raises(db, admin_user):
             metodo_pago=PaymentMethod.efectivo,
             items=[{"product_id": 99999, "cantidad": 1}],
         )
+
+
+def test_create_sale_second_item_insufficient_stock_raises(db, admin_user):
+    from app.services import sale_service
+    from app.services.sale_service import InsufficientStockError
+    p1 = _make_product(db, nombre="OK", stock=10)
+    p2 = _make_product(db, nombre="Sin stock", stock=1)
+    with pytest.raises(InsufficientStockError, match="Insufficient stock"):
+        sale_service.create_sale(
+            db,
+            user_id=admin_user.id,
+            metodo_pago=PaymentMethod.efectivo,
+            items=[
+                {"product_id": p1.id, "cantidad": 2},
+                {"product_id": p2.id, "cantidad": 5},
+            ],
+        )

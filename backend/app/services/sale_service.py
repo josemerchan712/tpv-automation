@@ -34,13 +34,11 @@ def create_sale(
             )
         line_data.append((product, item["cantidad"]))
 
-    # Phase 2: create sale header
+    # Phase 2: write — all validation passed, now commit atomically
     total = sum(p.precio * Decimal(str(q)) for p, q in line_data)
     sale = Sale(total=total, metodo_pago=metodo_pago, user_id=user_id)
     db.add(sale)
     db.flush()  # populate sale.id before creating items
-
-    # Phase 3: create items, deduct stock, log movements
     for product, cantidad in line_data:
         db.add(SaleItem(
             sale_id=sale.id,
