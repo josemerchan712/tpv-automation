@@ -71,7 +71,8 @@ def test_update_product_admin(client, admin_headers):
         f"/products/{prod_id}", json={"precio": "1.00"}, headers=admin_headers
     )
     assert resp.status_code == 200
-    assert resp.json()["precio"] == "1.00"
+    from decimal import Decimal
+    assert Decimal(str(resp.json()["precio"])) == Decimal("1.00")
 
 
 def test_update_product_cashier_forbidden(client, cashier_headers, admin_headers):
@@ -99,6 +100,15 @@ def test_delete_product_admin(client, admin_headers):
     prod_id = create.json()["id"]
     resp = client.delete(f"/products/{prod_id}", headers=admin_headers)
     assert resp.status_code == 204
+
+
+def test_delete_product_cashier_forbidden(client, cashier_headers, admin_headers):
+    create = client.post(
+        "/products", json={"nombre": "NoBorrable", "precio": "0.50"}, headers=admin_headers
+    )
+    prod_id = create.json()["id"]
+    resp = client.delete(f"/products/{prod_id}", headers=cashier_headers)
+    assert resp.status_code == 403
 
 
 def test_delete_product_not_found(client, admin_headers):

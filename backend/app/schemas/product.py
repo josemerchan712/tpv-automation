@@ -30,7 +30,9 @@ class ProductUpdate(BaseModel):
     @field_validator("precio")
     @classmethod
     def precio_must_be_positive(cls, v: Decimal | None) -> Decimal | None:
-        if v is not None and v <= 0:
+        if v is None:
+            raise ValueError("precio cannot be set to null")
+        if v <= 0:
             raise ValueError("precio must be greater than 0")
         return v
 
