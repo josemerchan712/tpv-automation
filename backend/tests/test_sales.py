@@ -189,3 +189,70 @@ def test_create_sale_second_item_insufficient_stock_raises(db, admin_user):
                 {"product_id": p2.id, "cantidad": 5},
             ],
         )
+
+
+# ── service: get_sales / get_sale ──────────────────────────────────────────
+
+def test_get_sales_returns_all(db, admin_user):
+    from app.services import sale_service
+    prod = _make_product(db, stock=100)
+    sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
+                             items=[{"product_id": prod.id, "cantidad": 1}])
+    sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.tarjeta,
+                             items=[{"product_id": prod.id, "cantidad": 1}])
+    sales = sale_service.get_sales(db)
+    assert len(sales) >= 2
+
+
+def test_get_sales_ordered_newest_first(db, admin_user):
+    from app.services import sale_service
+    prod = _make_product(db, stock=100)
+    s1 = sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
+                                  items=[{"product_id": prod.id, "cantidad": 1}])
+    s2 = sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
+                                  items=[{"product_id": prod.id, "cantidad": 1}])
+    sales = sale_service.get_sales(db)
+    ids = [s.id for s in sales]
+    assert ids.index(s2.id) < ids.index(s1.id)
+
+
+def test_get_sales_date_filter_excludes_future(db, admin_user):
+    from datetime import date, timedelta
+    from app.services import sale_service
+    prod = _make_product(db, stock=100)
+    sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
+                             items=[{"product_id": prod.id, "cantidad": 1}])
+    tomorrow = date.today() + timedelta(days=1)
+    future_sales = sale_service.get_sales(db, fecha_inicio=tomorrow)
+    assert len(future_sales) == 0
+
+
+def test_get_sales_date_filter_includes_today(db, admin_user):
+    from datetime import date
+    from app.services import sale_service
+    prod = _make_product(db, stock=100)
+    sale_service.create_sale(db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
+                             items=[{"product_id": prod.id, "cantidad": 1}])
+    today = date.today()
+    today_sales = sale_service.get_sales(db, fecha_inicio=today, fecha_fin=today)
+    assert len(today_sales) >= 1
+
+
+def test_get_sale_returns_sale_with_items(db, admin_user):
+    from app.services import sale_service
+    prod = _make_product(db)
+    created = sale_service.create_sale(
+        db, user_id=admin_user.id, metodo_pago=PaymentMethod.efectivo,
+        items=[{"product_id": prod.id, "cantidad": 2}],
+    )
+    fetched = sale_service.get_sale(db, created.id)
+    assert fetched is not None
+    assert fetched.id == created.id
+    assert len(fetched.items) == 1
+    assert fetched.items[0].cantidad == 2
+
+
+def test_get_sale_returns_none_for_unknown_id(db):
+    from app.services import sale_service
+    result = sale_service.get_sale(db, 99999)
+    assert result is None
