@@ -346,10 +346,11 @@ def test_post_sale_empty_items_returns_422(client, admin_headers):
 
 def test_post_sale_stock_is_decremented(client, admin_headers, db):
     prod = _make_product(db, stock=10)
-    client.post(
+    resp = client.post(
         "/sales",
         json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 4}]},
         headers=admin_headers,
     )
+    assert resp.status_code == 201
     db.refresh(prod)
     assert prod.stock == 6

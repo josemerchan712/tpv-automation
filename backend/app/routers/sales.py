@@ -1,4 +1,4 @@
-from datetime import date as DateType
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -34,8 +34,8 @@ def create_sale(
 
 @router.get("", response_model=list[SaleListOut])
 def list_sales(
-    fecha_inicio: DateType | None = None,
-    fecha_fin: DateType | None = None,
+    fecha_inicio: date | None = None,
+    fecha_fin: date | None = None,
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
