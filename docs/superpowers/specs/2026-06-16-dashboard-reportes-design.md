@@ -216,6 +216,6 @@ Patrón: Vitest + React Testing Library, mock de `apiClient`, igual que `TicketP
 ## Decisiones y restricciones
 
 - `<input type="date">` nativo: sin dependencias extra de date-picker
-- Decimal → `string` en JSON: los importes se muestran tal cual desde la API (ya vienen formateados con dos decimales)
+- Decimal → `string` en JSON: la API puede devolver `"0"` en lugar de `"0.00"` para valores cero; la implementación debe aplicar `parseFloat(value).toFixed(2)` antes de mostrar cualquier importe monetario
 - Top 10: la limitación se aplica en el frontend con `.slice(0, 10)` ya que el backend no tiene parámetro `limit`
 - El botón "Actualizar" invalida todas las queries con prefijo `['reports']`, lo que garantiza coherencia de datos entre los tres widgets
