@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getCategories } from '../api/categories'
 import { getProducts } from '../api/products'
@@ -16,6 +16,7 @@ export default function SalesPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('efectivo')
   const [error, setError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const queryClient = useQueryClient()
 
@@ -40,14 +41,20 @@ export default function SalesPage() {
       setError(null)
       setSuccessMessage('Venta registrada correctamente')
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      setTimeout(() => setSuccessMessage(null), 3000)
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+      successTimerRef.current = setTimeout(() => setSuccessMessage(null), 3000)
     },
     onError: (err: unknown) => {
-      const detail =
-        (err as { detail?: string })?.detail ?? 'Error al registrar la venta'
-      setError(detail)
+      const message = err instanceof Error ? err.message : 'Error al registrar la venta'
+      setError(message)
     },
   })
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    }
+  }, [])
 
   const filtered = products.filter((p) =>
     p.nombre.toLowerCase().includes(search.toLowerCase()),
@@ -68,6 +75,7 @@ export default function SalesPage() {
   }
 
   function handleIncrement(productId: number) {
+    setError(null)
     setTicketItems((prev) =>
       prev.map((i) => {
         if (i.product.id !== productId) return i
@@ -78,6 +86,7 @@ export default function SalesPage() {
   }
 
   function handleDecrement(productId: number) {
+    setError(null)
     setTicketItems((prev) =>
       prev
         .map((i) =>
@@ -88,10 +97,12 @@ export default function SalesPage() {
   }
 
   function handleRemove(productId: number) {
+    setError(null)
     setTicketItems((prev) => prev.filter((i) => i.product.id !== productId))
   }
 
   function handleConfirm() {
+    if (saleMutation.isPending || ticketItems.length === 0) return
     setError(null)
     saleMutation.mutate({
       metodo_pago: paymentMethod,
