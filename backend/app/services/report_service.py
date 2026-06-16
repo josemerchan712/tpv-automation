@@ -34,3 +34,42 @@ def get_low_stock_products(db: Session) -> list[LowStockProductOut]:
         .all()
     )
     return [LowStockProductOut.model_validate(p) for p in products]
+
+
+def get_top_products(
+    db: Session,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+) -> list[TopProductOut]:
+    q = (
+        db.query(
+            SaleItem.product_id,
+            Product.nombre,
+            func.sum(SaleItem.cantidad).label("total_cantidad"),
+            func.sum(SaleItem.cantidad * SaleItem.precio_unitario).label("total_importe"),
+        )
+        .join(Product, SaleItem.product_id == Product.id)
+        .join(Sale, SaleItem.sale_id == Sale.id)
+    )
+    if fecha_desde is not None:
+        q = q.filter(
+            Sale.fecha >= datetime.combine(fecha_desde, time.min).replace(tzinfo=timezone.utc)
+        )
+    if fecha_hasta is not None:
+        q = q.filter(
+            Sale.fecha <= datetime.combine(fecha_hasta, time.max).replace(tzinfo=timezone.utc)
+        )
+    rows = (
+        q.group_by(SaleItem.product_id, Product.nombre)
+        .order_by(func.sum(SaleItem.cantidad).desc())
+        .all()
+    )
+    return [
+        TopProductOut(
+            product_id=row.product_id,
+            nombre=row.nombre,
+            total_cantidad=row.total_cantidad,
+            total_importe=row.total_importe,
+        )
+        for row in rows
+    ]

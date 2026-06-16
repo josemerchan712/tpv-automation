@@ -114,3 +114,67 @@ def test_low_stock_multiple_only_returns_below_min(db):
     result = get_low_stock_products(db)
     assert len(result) == 1
     assert result[0].id == p_low.id
+
+
+# ── get_top_products ─────────────────────────────────────────────────────────
+
+def test_top_products_no_sales_returns_empty(db):
+    from app.services.report_service import get_top_products
+    result = get_top_products(db)
+    assert result == []
+
+
+def test_top_products_sorted_by_quantity_desc(db, admin_user):
+    from app.services.report_service import get_top_products
+    p1 = _make_product(db, nombre="A", stock=100)
+    p2 = _make_product(db, nombre="B", stock=100)
+    _make_sale(db, admin_user.id, PaymentMethod.efectivo, [(p1, 3), (p2, 7)])
+    result = get_top_products(db)
+    assert len(result) == 2
+    assert result[0].product_id == p2.id   # 7 units — top
+    assert result[1].product_id == p1.id   # 3 units
+
+
+def test_top_products_calculates_total_importe(db, admin_user):
+    from app.services.report_service import get_top_products
+    prod = _make_product(db, precio="5.00", stock=100)
+    _make_sale(db, admin_user.id, PaymentMethod.efectivo, [(prod, 4)])  # 4 × 5.00 = 20.00
+    result = get_top_products(db)
+    assert len(result) == 1
+    assert result[0].total_cantidad == 4
+    assert result[0].total_importe == Decimal("20.00")
+
+
+def test_top_products_aggregates_across_multiple_sales(db, admin_user):
+    from app.services.report_service import get_top_products
+    prod = _make_product(db, precio="3.00", stock=100)
+    _make_sale(db, admin_user.id, PaymentMethod.efectivo, [(prod, 2)])
+    _make_sale(db, admin_user.id, PaymentMethod.tarjeta, [(prod, 5)])
+    result = get_top_products(db)
+    assert len(result) == 1
+    assert result[0].total_cantidad == 7
+    assert result[0].total_importe == Decimal("21.00")
+
+
+def test_top_products_fecha_desde_excludes_older_sales(db, admin_user):
+    from datetime import date, datetime, timedelta, UTC
+    from app.services.report_service import get_top_products
+    prod = _make_product(db, stock=100)
+    sale = _make_sale(db, admin_user.id, PaymentMethod.efectivo, [(prod, 2)])
+    sale.fecha = datetime.now(UTC) - timedelta(days=10)
+    db.commit()
+    fecha_desde = date.today() - timedelta(days=3)
+    result = get_top_products(db, fecha_desde=fecha_desde)
+    assert result == []
+
+
+def test_top_products_fecha_hasta_excludes_future_sales(db, admin_user):
+    from datetime import date, datetime, timedelta, UTC
+    from app.services.report_service import get_top_products
+    prod = _make_product(db, stock=100)
+    sale = _make_sale(db, admin_user.id, PaymentMethod.efectivo, [(prod, 2)])
+    sale.fecha = datetime.now(UTC) + timedelta(days=5)
+    db.commit()
+    fecha_hasta = date.today()
+    result = get_top_products(db, fecha_hasta=fecha_hasta)
+    assert result == []
