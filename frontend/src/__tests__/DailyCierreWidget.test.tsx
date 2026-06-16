@@ -72,8 +72,7 @@ describe('DailyCierreWidget', () => {
     })
     render(<DailyCierreWidget />, { wrapper: makeWrapper() })
     await waitFor(() => expect(reportsApi.fetchDailyClose).toHaveBeenCalledTimes(1))
-    const input = document.querySelector('input[type="date"]') as HTMLInputElement
-    fireEvent.change(input, { target: { value: '2026-06-01' } })
+    fireEvent.change(screen.getByLabelText(/fecha del cierre/i), { target: { value: '2026-06-01' } })
     await waitFor(() =>
       expect(reportsApi.fetchDailyClose).toHaveBeenCalledWith('2026-06-01'),
     )

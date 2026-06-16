@@ -26,6 +26,7 @@ export default function DailyCierreWidget() {
           type="date"
           value={fecha}
           onChange={(e) => setFecha(e.target.value)}
+          aria-label="Fecha del cierre"
           className="border border-gray-300 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
       </div>
@@ -34,12 +35,12 @@ export default function DailyCierreWidget() {
       {isError && (
         <p className="text-red-500 text-sm">Error al cargar el cierre de caja.</p>
       )}
-      {data && data.num_tickets === 0 && (
+      {!isError && data && data.num_tickets === 0 && (
         <p className="text-gray-400 text-sm py-4 text-center">
           Sin ventas para esta fecha.
         </p>
       )}
-      {data && data.num_tickets > 0 && (
+      {!isError && data && data.num_tickets > 0 && (
         <>
           <div className="flex items-end gap-6 mb-4">
             <div>
