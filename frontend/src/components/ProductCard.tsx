@@ -2,17 +2,37 @@ import type { ProductOut } from '../api/products'
 
 interface Props {
   product: ProductOut
-  isAdmin: boolean
-  onEdit: () => void
-  onDelete: () => void
+  isAdmin?: boolean
+  onEdit?: () => void
+  onDelete?: () => void
+  onAdd?: () => void
 }
 
-export default function ProductCard({ product, isAdmin, onEdit, onDelete }: Props) {
+export default function ProductCard({
+  product,
+  isAdmin = false,
+  onEdit,
+  onDelete,
+  onAdd,
+}: Props) {
   const stockOk = product.stock >= product.stock_minimo
+  const outOfStock = product.stock === 0
+  const saleMode = onAdd !== undefined
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-      {/* Image placeholder */}
+    <div
+      onClick={saleMode && !outOfStock ? onAdd : undefined}
+      className={[
+        'bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col',
+        saleMode && !outOfStock
+          ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400 transition-all'
+          : '',
+        outOfStock ? 'opacity-50' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      {/* Image area */}
       <div className="aspect-square bg-gray-50 flex items-center justify-center relative">
         <svg
           className="w-12 h-12 text-gray-300"
@@ -28,7 +48,18 @@ export default function ProductCard({ product, isAdmin, onEdit, onDelete }: Prop
           />
         </svg>
 
-        {isAdmin && (
+        {saleMode && (
+          <div
+            className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white text-lg leading-none shadow ${
+              outOfStock ? 'bg-gray-400' : 'bg-indigo-600'
+            }`}
+            aria-hidden
+          >
+            +
+          </div>
+        )}
+
+        {!saleMode && isAdmin && (
           <div className="absolute top-2 right-2 flex gap-1">
             <button
               onClick={onEdit}
@@ -36,7 +67,13 @@ export default function ProductCard({ product, isAdmin, onEdit, onDelete }: Prop
               title="Editar"
               aria-label="Editar producto"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden={true}>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -51,7 +88,13 @@ export default function ProductCard({ product, isAdmin, onEdit, onDelete }: Prop
               title="Eliminar"
               aria-label="Eliminar producto"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden={true}>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
