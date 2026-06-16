@@ -178,3 +178,119 @@ def test_top_products_fecha_hasta_excludes_future_sales(db, admin_user):
     fecha_hasta = date.today()
     result = get_top_products(db, fecha_hasta=fecha_hasta)
     assert result == []
+
+
+# ── API: GET /reports/daily-close ────────────────────────────────────────────
+
+def test_daily_close_requires_auth(client):
+    resp = client.get("/reports/daily-close")
+    assert resp.status_code == 401
+
+
+def test_daily_close_api_default_is_today(client, admin_headers):
+    from datetime import date
+    resp = client.get("/reports/daily-close", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["fecha"] == date.today().isoformat()
+    assert data["num_tickets"] == 0
+    assert data["total_ventas"] == "0"
+
+
+def test_daily_close_api_accepts_fecha_param(client, admin_headers):
+    resp = client.get("/reports/daily-close?fecha=2024-03-15", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["fecha"] == "2024-03-15"
+    assert data["num_tickets"] == 0
+
+
+def test_daily_close_api_response_includes_desglose(client, admin_headers, db):
+    prod = _make_product(db, precio="20.00", stock=100)
+    client.post(
+        "/sales",
+        json={"metodo_pago": "tarjeta", "items": [{"product_id": prod.id, "cantidad": 1}]},
+        headers=admin_headers,
+    )
+    resp = client.get("/reports/daily-close", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["num_tickets"] == 1
+    assert data["total_ventas"] == "20.00"
+    assert data["desglose_pago"]["tarjeta"] == "20.00"
+    assert data["desglose_pago"]["efectivo"] == "0"
+
+
+# ── API: GET /reports/low-stock ──────────────────────────────────────────────
+
+def test_low_stock_requires_auth(client):
+    resp = client.get("/reports/low-stock")
+    assert resp.status_code == 401
+
+
+def test_low_stock_api_returns_empty_list(client, admin_headers):
+    resp = client.get("/reports/low-stock", headers=admin_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_low_stock_api_returns_low_stock_products(client, admin_headers, db):
+    _make_product(db, nombre="Crítico", stock=1, stock_minimo=10)
+    _make_product(db, nombre="OK", stock=20, stock_minimo=5)
+    resp = client.get("/reports/low-stock", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["nombre"] == "Crítico"
+    assert data[0]["stock"] == 1
+    assert data[0]["stock_minimo"] == 10
+
+
+# ── API: GET /reports/top-products ───────────────────────────────────────────
+
+def test_top_products_requires_auth(client):
+    resp = client.get("/reports/top-products")
+    assert resp.status_code == 401
+
+
+def test_top_products_api_returns_empty_when_no_sales(client, admin_headers):
+    resp = client.get("/reports/top-products", headers=admin_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_top_products_api_returns_sorted_products(client, admin_headers, db):
+    p1 = _make_product(db, nombre="Poco", stock=100)
+    p2 = _make_product(db, nombre="Mucho", stock=100)
+    client.post(
+        "/sales",
+        json={
+            "metodo_pago": "efectivo",
+            "items": [
+                {"product_id": p1.id, "cantidad": 2},
+                {"product_id": p2.id, "cantidad": 8},
+            ],
+        },
+        headers=admin_headers,
+    )
+    resp = client.get("/reports/top-products", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 2
+    assert data[0]["product_id"] == p2.id   # 8 units first
+    assert data[0]["total_cantidad"] == 8
+    assert data[1]["product_id"] == p1.id
+
+
+def test_top_products_api_date_filter(client, admin_headers, db):
+    from datetime import date, timedelta
+    prod = _make_product(db, stock=100)
+    client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 3}]},
+        headers=admin_headers,
+    )
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+    resp = client.get(f"/reports/top-products?fecha_hasta={yesterday}", headers=admin_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
