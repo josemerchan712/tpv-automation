@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import CatalogPage from './pages/CatalogPage'
+import SalesPage from './pages/SalesPage'
 
 const queryClient = new QueryClient()
 
@@ -17,14 +18,7 @@ export default function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/catalogo" replace />} />
               <Route path="/catalogo" element={<CatalogPage />} />
-              <Route
-                path="/ventas"
-                element={
-                  <div className="flex items-center justify-center h-64 text-gray-400">
-                    Ventas — Próximamente
-                  </div>
-                }
-              />
+              <Route path="/ventas" element={<SalesPage />} />
             </Route>
           </Route>
         </Routes>
