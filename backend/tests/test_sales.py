@@ -273,3 +273,83 @@ def test_get_sale_returns_none_for_unknown_id(db):
     from app.services import sale_service
     result = sale_service.get_sale(db, 99999)
     assert result is None
+
+
+# ── API: POST /sales ────────────────────────────────────────────────────────
+
+def test_post_sale_requires_auth(client):
+    resp = client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": 1, "cantidad": 1}]},
+    )
+    assert resp.status_code == 401
+
+
+def test_post_sale_cashier_can_create(client, cashier_headers, db):
+    prod = _make_product(db, stock=10)
+    resp = client.post(
+        "/sales",
+        json={
+            "metodo_pago": "efectivo",
+            "items": [{"product_id": prod.id, "cantidad": 2}],
+        },
+        headers=cashier_headers,
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert "id" in data
+    assert data["total"] == "20.00"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["precio_unitario"] == "10.00"
+    assert data["items"][0]["cantidad"] == 2
+
+
+def test_post_sale_returns_correct_metodo_pago(client, admin_headers, db):
+    prod = _make_product(db, stock=10)
+    resp = client.post(
+        "/sales",
+        json={"metodo_pago": "tarjeta", "items": [{"product_id": prod.id, "cantidad": 1}]},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 201
+    assert resp.json()["metodo_pago"] == "tarjeta"
+
+
+def test_post_sale_insufficient_stock_returns_422(client, admin_headers, db):
+    prod = _make_product(db, stock=1)
+    resp = client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 5}]},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 422
+    assert "Insufficient stock" in resp.json()["detail"]
+
+
+def test_post_sale_product_not_found_returns_404(client, admin_headers):
+    resp = client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": 99999, "cantidad": 1}]},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 404
+
+
+def test_post_sale_empty_items_returns_422(client, admin_headers):
+    resp = client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": []},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 422
+
+
+def test_post_sale_stock_is_decremented(client, admin_headers, db):
+    prod = _make_product(db, stock=10)
+    client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 4}]},
+        headers=admin_headers,
+    )
+    db.refresh(prod)
+    assert prod.stock == 6
