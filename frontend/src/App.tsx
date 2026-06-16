@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import CatalogPage from './pages/CatalogPage'
 import SalesPage from './pages/SalesPage'
+import DashboardPage from './pages/DashboardPage'
 
 const queryClient = new QueryClient()
 
@@ -19,6 +20,7 @@ export default function App() {
               <Route path="/" element={<Navigate to="/catalogo" replace />} />
               <Route path="/catalogo" element={<CatalogPage />} />
               <Route path="/ventas" element={<SalesPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
             </Route>
           </Route>
         </Routes>
