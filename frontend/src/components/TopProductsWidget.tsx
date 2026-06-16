@@ -18,9 +18,8 @@ function fmt(value: string) {
 }
 
 export default function TopProductsWidget() {
-  const { desde, hasta } = getMonthRange()
-  const [fechaDesde, setFechaDesde] = useState(desde)
-  const [fechaHasta, setFechaHasta] = useState(hasta)
+  const [fechaDesde, setFechaDesde] = useState(() => getMonthRange().desde)
+  const [fechaHasta, setFechaHasta] = useState(() => getMonthRange().hasta)
 
   const { data = [], isLoading, isError } = useQuery({
     queryKey: ['reports', 'top-products', fechaDesde, fechaHasta],
