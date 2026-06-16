@@ -194,7 +194,7 @@ def test_daily_close_api_default_is_today(client, admin_headers):
     data = resp.json()
     assert data["fecha"] == date.today().isoformat()
     assert data["num_tickets"] == 0
-    assert data["total_ventas"] == "0"
+    assert Decimal(data["total_ventas"]) == Decimal("0")
 
 
 def test_daily_close_api_accepts_fecha_param(client, admin_headers):
@@ -218,7 +218,7 @@ def test_daily_close_api_response_includes_desglose(client, admin_headers, db):
     assert data["num_tickets"] == 1
     assert data["total_ventas"] == "20.00"
     assert data["desglose_pago"]["tarjeta"] == "20.00"
-    assert data["desglose_pago"]["efectivo"] == "0"
+    assert Decimal(data["desglose_pago"]["efectivo"]) == Decimal("0")
 
 
 # ── API: GET /reports/low-stock ──────────────────────────────────────────────
