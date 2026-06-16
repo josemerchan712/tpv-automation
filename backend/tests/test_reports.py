@@ -78,3 +78,39 @@ def test_daily_close_excludes_other_days(db, admin_user):
     result = daily_close(db, date.today())
     assert result.num_tickets == 0
     assert result.total_ventas == Decimal("0")
+
+
+# ── get_low_stock_products ───────────────────────────────────────────────────
+
+def test_low_stock_empty_when_all_above_min(db):
+    from app.services.report_service import get_low_stock_products
+    _make_product(db, stock=10, stock_minimo=5)
+    result = get_low_stock_products(db)
+    assert result == []
+
+
+def test_low_stock_returns_product_below_min(db):
+    from app.services.report_service import get_low_stock_products
+    prod = _make_product(db, nombre="Crítico", stock=3, stock_minimo=10)
+    result = get_low_stock_products(db)
+    assert len(result) == 1
+    assert result[0].id == prod.id
+    assert result[0].stock == 3
+    assert result[0].stock_minimo == 10
+
+
+def test_low_stock_excludes_product_at_exact_minimum(db):
+    from app.services.report_service import get_low_stock_products
+    _make_product(db, stock=5, stock_minimo=5)
+    result = get_low_stock_products(db)
+    assert result == []
+
+
+def test_low_stock_multiple_only_returns_below_min(db):
+    from app.services.report_service import get_low_stock_products
+    p_low = _make_product(db, nombre="Low", stock=2, stock_minimo=10)
+    _make_product(db, nombre="OK", stock=20, stock_minimo=10)
+    _make_product(db, nombre="Exact", stock=10, stock_minimo=10)
+    result = get_low_stock_products(db)
+    assert len(result) == 1
+    assert result[0].id == p_low.id

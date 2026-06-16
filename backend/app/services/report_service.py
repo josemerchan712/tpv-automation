@@ -24,3 +24,13 @@ def daily_close(db: Session, fecha: date) -> DailyCloseOut:
         num_tickets=len(sales),
         desglose_pago=PaymentBreakdown(**breakdown),
     )
+
+
+def get_low_stock_products(db: Session) -> list[LowStockProductOut]:
+    products = (
+        db.query(Product)
+        .filter(Product.stock < Product.stock_minimo)
+        .order_by(Product.nombre)
+        .all()
+    )
+    return [LowStockProductOut.model_validate(p) for p in products]
