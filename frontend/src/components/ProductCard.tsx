@@ -34,8 +34,9 @@ export default function ProductCard({ product, isAdmin, onEdit, onDelete }: Prop
               onClick={onEdit}
               className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-indigo-50 text-gray-400 hover:text-indigo-600 transition-colors"
               title="Editar"
+              aria-label="Editar producto"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden={true}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -48,8 +49,9 @@ export default function ProductCard({ product, isAdmin, onEdit, onDelete }: Prop
               onClick={onDelete}
               className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
               title="Eliminar"
+              aria-label="Eliminar producto"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden={true}>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
