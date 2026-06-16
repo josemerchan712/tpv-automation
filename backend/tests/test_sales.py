@@ -354,3 +354,83 @@ def test_post_sale_stock_is_decremented(client, admin_headers, db):
     assert resp.status_code == 201
     db.refresh(prod)
     assert prod.stock == 6
+
+
+# ── API: GET /sales ─────────────────────────────────────────────────────────
+
+def test_get_sales_requires_auth(client):
+    resp = client.get("/sales")
+    assert resp.status_code == 401
+
+
+def test_get_sales_returns_list(client, admin_headers, db):
+    prod = _make_product(db, stock=100)
+    client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 1}]},
+        headers=admin_headers,
+    )
+    resp = client.get("/sales", headers=admin_headers)
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+    assert len(resp.json()) == 1
+
+
+def test_get_sales_list_items_have_no_line_items(client, admin_headers, db):
+    prod = _make_product(db, stock=100)
+    client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 1}]},
+        headers=admin_headers,
+    )
+    resp = client.get("/sales", headers=admin_headers)
+    first = resp.json()[0]
+    assert "items" not in first
+    assert "total" in first
+    assert "metodo_pago" in first
+
+
+def test_get_sales_date_filter_query_param(client, admin_headers, db):
+    from datetime import date, timedelta
+    prod = _make_product(db, stock=100)
+    client.post(
+        "/sales",
+        json={"metodo_pago": "efectivo", "items": [{"product_id": prod.id, "cantidad": 1}]},
+        headers=admin_headers,
+    )
+    tomorrow = (date.today() + timedelta(days=1)).isoformat()
+    resp = client.get(f"/sales?fecha_inicio={tomorrow}", headers=admin_headers)
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+# ── API: GET /sales/{id} ────────────────────────────────────────────────────
+
+def test_get_sale_by_id_requires_auth(client):
+    resp = client.get("/sales/1")
+    assert resp.status_code == 401
+
+
+def test_get_sale_by_id_returns_detail(client, admin_headers, db):
+    prod = _make_product(db, stock=100)
+    create_resp = client.post(
+        "/sales",
+        json={"metodo_pago": "bizum", "items": [{"product_id": prod.id, "cantidad": 3}]},
+        headers=admin_headers,
+    )
+    assert create_resp.status_code == 201
+    sale_id = create_resp.json()["id"]
+
+    resp = client.get(f"/sales/{sale_id}", headers=admin_headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["id"] == sale_id
+    assert data["metodo_pago"] == "bizum"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["cantidad"] == 3
+
+
+def test_get_sale_by_id_not_found_returns_404(client, admin_headers):
+    resp = client.get("/sales/99999", headers=admin_headers)
+    assert resp.status_code == 404
+    assert resp.json()["detail"] == "Sale not found"
