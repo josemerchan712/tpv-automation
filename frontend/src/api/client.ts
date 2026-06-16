@@ -23,8 +23,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (res.status === 204) return null as T
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }))
-    throw error
+    const body = await res.json().catch(() => ({ detail: res.statusText }))
+    const raw = body?.detail
+    const message =
+      typeof raw === 'string' && raw.length > 0
+        ? raw
+        : Array.isArray(raw)
+          ? (raw as { msg?: string }[]).map((e) => e.msg ?? String(e)).join('; ')
+          : `Error ${res.status}`
+    throw new Error(message)
   }
 
   return res.json()
