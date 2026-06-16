@@ -15,6 +15,7 @@ export default function CatalogPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductOut | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const queryClient = useQueryClient()
 
@@ -23,7 +24,7 @@ export default function CatalogPage() {
     queryFn: getCategories,
   })
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading, isError } = useQuery({
     queryKey: ['products', categoryFilter],
     queryFn: () =>
       getProducts(categoryFilter ? Number(categoryFilter) : undefined),
@@ -32,6 +33,7 @@ export default function CatalogPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteProduct(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
+    onError: () => alert('No se pudo eliminar el producto. Inténtalo de nuevo.'),
   })
 
   const filtered = products.filter((p) =>
@@ -45,7 +47,10 @@ export default function CatalogPage() {
 
   function handleDelete(id: number) {
     if (window.confirm('¿Eliminar este producto?')) {
-      deleteMutation.mutate(id)
+      setDeletingId(id)
+      deleteMutation.mutate(id, {
+        onSettled: () => setDeletingId(null),
+      })
     }
   }
 
@@ -92,6 +97,8 @@ export default function CatalogPage() {
       {/* Product grid */}
       {isLoading ? (
         <p className="text-gray-400 text-sm">Cargando...</p>
+      ) : isError ? (
+        <p className="text-red-500 text-sm">Error al cargar los productos. Inténtalo de nuevo.</p>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-gray-300">
           <svg

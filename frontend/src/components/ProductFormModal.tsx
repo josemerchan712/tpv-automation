@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { CategoryOut } from '../api/categories'
 import type { ProductOut } from '../api/products'
 import { createProduct, updateProduct } from '../api/products'
@@ -20,16 +20,6 @@ export default function ProductFormModal({ product, categories, onClose, onSaved
   })
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    setForm({
-      nombre: product?.nombre ?? '',
-      precio: product?.precio ?? '',
-      stock: String(product?.stock ?? 0),
-      stock_minimo: String(product?.stock_minimo ?? 0),
-      category_id: String(product?.category_id ?? ''),
-    })
-  }, [product])
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
