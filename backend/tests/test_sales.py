@@ -4,7 +4,7 @@ from pydantic import ValidationError
 
 from app.models.product import Product
 from app.models.sale import PaymentMethod
-from app.models.stock_movement import MovementType
+from app.models.stock_movement import MovementType  # noqa: F401
 
 
 # ── helpers ────────────────────────────────────────────────────────────────

@@ -22,7 +22,7 @@ class SaleCreate(BaseModel):
 
     @field_validator("items")
     @classmethod
-    def items_must_not_be_empty(cls, v: list) -> list:
+    def items_must_not_be_empty(cls, v: list[SaleItemCreate]) -> list[SaleItemCreate]:
         if not v:
             raise ValueError("items cannot be empty")
         return v
