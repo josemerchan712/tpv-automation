@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from app.config import settings
 from app.database import engine, Base
 import app.models  # noqa: F401
-from app.routers import auth, categories, products, sales
+from app.routers import auth, categories, products, sales, ai
 
 
 @asynccontextmanager
@@ -27,6 +27,7 @@ app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(products.router)
 app.include_router(sales.router)
+app.include_router(ai.router)
 
 
 @app.get("/health")
