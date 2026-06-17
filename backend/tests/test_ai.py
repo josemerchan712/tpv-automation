@@ -77,3 +77,15 @@ def test_stock_analysis_gemini_error(client, admin_headers):
 
     assert response.status_code == 502
     assert "Error al contactar" in response.json()["detail"]
+
+
+def test_weekly_report_cashier_forbidden(client, cashier_headers):
+    """Usuarios con rol cashier no pueden acceder a los endpoints de IA."""
+    response = client.post("/ai/weekly-report", headers=cashier_headers)
+    assert response.status_code == 403
+
+
+def test_stock_analysis_cashier_forbidden(client, cashier_headers):
+    """Usuarios con rol cashier no pueden acceder al análisis de stock IA."""
+    response = client.post("/ai/stock-analysis", headers=cashier_headers)
+    assert response.status_code == 403

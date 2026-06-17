@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import google.generativeai as genai
 from fastapi import HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, case as sa_case
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -76,23 +76,31 @@ def _gather_stock_data(db: Session) -> dict:
 
     products = db.query(Product).order_by(Product.nombre).all()
 
-    def units_sold_since(product_id: int, since: date, until: date | None = None) -> int:
-        dt_since = datetime.combine(since, time.min).replace(tzinfo=timezone.utc)
-        q = (
-            db.query(func.sum(SaleItem.cantidad))
-            .join(Sale, SaleItem.sale_id == Sale.id)
-            .filter(SaleItem.product_id == product_id, Sale.fecha >= dt_since)
+    dt_thirty = datetime.combine(thirty_days_ago, time.min).replace(tzinfo=timezone.utc)
+    dt_sixty = datetime.combine(sixty_days_ago, time.min).replace(tzinfo=timezone.utc)
+    dt_today = datetime.combine(today, time.max).replace(tzinfo=timezone.utc)
+
+    # Single bulk query: sum quantities split by the 30-day boundary
+    bulk_rows = (
+        db.query(
+            SaleItem.product_id,
+            func.sum(
+                sa_case((Sale.fecha >= dt_thirty, SaleItem.cantidad), else_=0)
+            ).label("sold_30"),
+            func.sum(
+                sa_case((Sale.fecha < dt_thirty, SaleItem.cantidad), else_=0)
+            ).label("sold_30a60"),
         )
-        if until is not None:
-            dt_until = datetime.combine(until, time.max).replace(tzinfo=timezone.utc)
-            q = q.filter(Sale.fecha <= dt_until)
-        result = q.scalar()
-        return result or 0
+        .join(Sale, SaleItem.sale_id == Sale.id)
+        .filter(Sale.fecha >= dt_sixty, Sale.fecha <= dt_today)
+        .group_by(SaleItem.product_id)
+        .all()
+    )
+    sold_map = {row.product_id: (row.sold_30, row.sold_30a60) for row in bulk_rows}
 
     product_data = []
     for p in products:
-        sold_30 = units_sold_since(p.id, thirty_days_ago)
-        sold_30a60 = units_sold_since(p.id, sixty_days_ago, thirty_days_ago)
+        sold_30, sold_30a60 = sold_map.get(p.id, (0, 0))
         product_data.append({
             "nombre": p.nombre,
             "stock_actual": p.stock,
@@ -107,13 +115,19 @@ def _gather_stock_data(db: Session) -> dict:
     }
 
 
+_genai_configured = False
+
+
 def _get_model() -> genai.GenerativeModel:
+    global _genai_configured
     if not settings.GEMINI_API_KEY:
         raise HTTPException(
             status_code=503,
             detail="IA no configurada: falta la variable de entorno GEMINI_API_KEY",
         )
-    genai.configure(api_key=settings.GEMINI_API_KEY)
+    if not _genai_configured:
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        _genai_configured = True
     return genai.GenerativeModel(settings.GEMINI_MODEL)
 
 
@@ -161,6 +175,11 @@ Genera un informe ejecutivo con estas secciones claramente delimitadas:
     try:
         response = model.generate_content(prompt)
         return response.text
+    except ValueError:
+        raise HTTPException(
+            status_code=502,
+            detail="La IA no pudo generar una respuesta para este contenido.",
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=502,
@@ -198,6 +217,11 @@ Genera un análisis con estas secciones claramente delimitadas:
     try:
         response = model.generate_content(prompt)
         return response.text
+    except ValueError:
+        raise HTTPException(
+            status_code=502,
+            detail="La IA no pudo generar una respuesta para este contenido.",
+        )
     except Exception as exc:
         raise HTTPException(
             status_code=502,
