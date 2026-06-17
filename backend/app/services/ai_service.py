@@ -76,26 +76,29 @@ def _gather_stock_data(db: Session) -> dict:
 
     products = db.query(Product).order_by(Product.nombre).all()
 
-    def units_sold_since(product_id: int, since: date) -> int:
+    def units_sold_since(product_id: int, since: date, until: date | None = None) -> int:
         dt_since = datetime.combine(since, time.min).replace(tzinfo=timezone.utc)
-        result = (
+        q = (
             db.query(func.sum(SaleItem.cantidad))
             .join(Sale, SaleItem.sale_id == Sale.id)
             .filter(SaleItem.product_id == product_id, Sale.fecha >= dt_since)
-            .scalar()
         )
+        if until is not None:
+            dt_until = datetime.combine(until, time.max).replace(tzinfo=timezone.utc)
+            q = q.filter(Sale.fecha <= dt_until)
+        result = q.scalar()
         return result or 0
 
     product_data = []
     for p in products:
         sold_30 = units_sold_since(p.id, thirty_days_ago)
-        sold_60 = units_sold_since(p.id, sixty_days_ago)
+        sold_30a60 = units_sold_since(p.id, sixty_days_ago, thirty_days_ago)
         product_data.append({
             "nombre": p.nombre,
             "stock_actual": p.stock,
             "stock_minimo": p.stock_minimo,
             "vendidas_30d": sold_30,
-            "vendidas_60d": sold_60,
+            "vendidas_30a60d": sold_30a60,
         })
 
     return {
@@ -171,7 +174,7 @@ def generate_stock_analysis(db: Session) -> str:
 
     productos_str = "\n".join(
         f"  - {p['nombre']}: stock {p['stock_actual']} (mín {p['stock_minimo']}) | "
-        f"vendidas 30d: {p['vendidas_30d']} | vendidas 60d: {p['vendidas_60d']}"
+        f"30d: {p['vendidas_30d']} | 30-60d: {p['vendidas_30a60d']}"
         for p in data["productos"]
     ) or "  Sin productos registrados"
 
@@ -181,7 +184,7 @@ Analiza los datos de stock y ventas y responde ÚNICAMENTE en español.
 FECHA DE ANÁLISIS: {data['fecha_analisis']}
 TOTAL DE PRODUCTOS: {len(data['productos'])}
 
-DATOS POR PRODUCTO (stock actual | mínimo | vendidas en últimos 30d | vendidas en últimos 60d):
+DATOS POR PRODUCTO (stock actual | mínimo | vendidas últimos 30d | vendidas hace 30-60d):
 {productos_str}
 
 Genera un análisis con estas secciones claramente delimitadas:

@@ -64,3 +64,16 @@ def test_stock_analysis_no_api_key(client, admin_headers):
 
     assert response.status_code == 503
     assert "GEMINI_API_KEY" in response.json()["detail"]
+
+
+def test_stock_analysis_gemini_error(client, admin_headers):
+    """Si Gemini falla en stock analysis, el endpoint devuelve 502 con mensaje amigable."""
+    with patch("app.services.ai_service.genai") as mock_genai, \
+         patch.object(settings, "GEMINI_API_KEY", "test-key"):
+        mock_genai.GenerativeModel.return_value.generate_content.side_effect = Exception(
+            "API quota exceeded"
+        )
+        response = client.post("/ai/stock-analysis", headers=admin_headers)
+
+    assert response.status_code == 502
+    assert "Error al contactar" in response.json()["detail"]
