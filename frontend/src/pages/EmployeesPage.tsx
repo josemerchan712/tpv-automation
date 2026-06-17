@@ -6,7 +6,7 @@ import HoursSummaryPanel from '../components/HoursSummaryPanel'
 
 export default function EmployeesPage() {
   const qc = useQueryClient()
-  const { data: employees = [], isLoading } = useQuery({
+  const { data: employees = [], isLoading, isError } = useQuery({
     queryKey: ['employees'],
     queryFn: getEmployees,
   })
@@ -20,6 +20,12 @@ export default function EmployeesPage() {
   }
 
   if (isLoading) return <div className="p-6 text-slate-500">Cargando...</div>
+  if (isError) return (
+    <div className="p-6">
+      <p className="text-red-600 font-medium">No se pudo conectar con el servidor.</p>
+      <p className="text-sm text-slate-500 mt-1">Asegúrate de que el backend está en marcha en el puerto 8000.</p>
+    </div>
+  )
 
   return (
     <div className="p-6 max-w-4xl">

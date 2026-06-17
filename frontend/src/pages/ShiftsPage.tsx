@@ -15,7 +15,7 @@ export default function ShiftsPage() {
   const [modalShift, setModalShift] = useState<ShiftOut | null | 'new'>(null)
 
   const { data: employees = [] } = useQuery({ queryKey: ['employees'], queryFn: getEmployees })
-  const { data: shifts = [], isLoading } = useQuery({
+  const { data: shifts = [], isLoading, isError } = useQuery({
     queryKey: ['shifts', filterEmployee, fechaInicio, fechaFin],
     queryFn: () => getShifts({ employee_id: filterEmployee, fecha_inicio: fechaInicio, fecha_fin: fechaFin }),
   })
@@ -60,7 +60,12 @@ export default function ShiftsPage() {
           value={fechaFin} onChange={e => setFechaFin(e.target.value)} />
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <div className="p-4 rounded-xl border border-red-200 bg-red-50">
+          <p className="text-red-600 font-medium">No se pudo conectar con el servidor.</p>
+          <p className="text-sm text-slate-500 mt-1">Asegúrate de que el backend está en marcha en el puerto 8000.</p>
+        </div>
+      ) : isLoading ? (
         <p className="text-slate-500">Cargando...</p>
       ) : (
         <div className="bg-white rounded-xl border divide-y">
