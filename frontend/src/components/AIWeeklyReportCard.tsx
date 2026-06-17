@@ -58,7 +58,7 @@ export default function AIWeeklyReportCard() {
       )}
 
       {informe && !isLoading && (
-        <div className="prose prose-sm max-w-none mt-2">
+        <div className="mt-2">
           <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans leading-relaxed bg-gray-50 rounded-lg p-4 border border-gray-100">
             {informe}
           </pre>
