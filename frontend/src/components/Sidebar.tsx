@@ -20,6 +20,19 @@ export default function Sidebar() {
 
       <nav className="flex-1 p-3 space-y-1">
         <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            `flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`
+          }
+        >
+          Dashboard
+        </NavLink>
+
+        <NavLink
           to="/catalogo"
           className={({ isActive }) =>
             `flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -32,17 +45,48 @@ export default function Sidebar() {
           Catálogo
         </NavLink>
 
-        <div className="relative group">
-          <button
-            disabled
-            className="w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-400 cursor-not-allowed"
-          >
-            Ventas
-          </button>
-          <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-            Próximamente
-          </span>
-        </div>
+        <NavLink
+          to="/ventas"
+          className={({ isActive }) =>
+            `flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-indigo-50 text-indigo-700'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`
+          }
+        >
+          Ventas
+        </NavLink>
+
+        {user?.role === 'admin' && (
+          <>
+            <NavLink
+              to="/empleados"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`
+              }
+            >
+              Empleados
+            </NavLink>
+
+            <NavLink
+              to="/turnos"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`
+              }
+            >
+              Turnos
+            </NavLink>
+          </>
+        )}
       </nav>
 
       <div className="p-3 border-t border-gray-200">

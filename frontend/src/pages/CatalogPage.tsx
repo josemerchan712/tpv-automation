@@ -15,7 +15,7 @@ export default function CatalogPage() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductOut | null>(null)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [_deletingId, setDeletingId] = useState<number | null>(null)
 
   const queryClient = useQueryClient()
 
