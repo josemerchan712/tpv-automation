@@ -46,7 +46,7 @@ describe('DailyCierreWidget', () => {
       desglose_pago: { efectivo: '100.00', tarjeta: '50.50', bizum: '0', otro: '0' },
     })
     render(<DailyCierreWidget />, { wrapper: makeWrapper() })
-    await waitFor(() => expect(screen.getByText('150.50 €')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('150,50 €')).toBeInTheDocument())
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
@@ -58,9 +58,9 @@ describe('DailyCierreWidget', () => {
       desglose_pago: { efectivo: '100.00', tarjeta: '50.50', bizum: '0.00', otro: '0.00' },
     })
     render(<DailyCierreWidget />, { wrapper: makeWrapper() })
-    await waitFor(() => expect(screen.getByText('100.00 €')).toBeInTheDocument())
-    expect(screen.getByText('50.50 €')).toBeInTheDocument()
-    expect(screen.getAllByText('0.00 €')).toHaveLength(2)
+    await waitFor(() => expect(screen.getByText('100,00 €')).toBeInTheDocument())
+    expect(screen.getByText('50,50 €')).toBeInTheDocument()
+    expect(screen.getAllByText('0,00 €')).toHaveLength(2)
   })
 
   it('llama a fetchDailyClose con la nueva fecha al cambiar el input', async () => {
