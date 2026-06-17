@@ -1,15 +1,28 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.dependencies import get_current_user
+from app.models.user import User
+from app.schemas.ai import WeeklyReportResponse, StockAnalysisResponse
+from app.services import ai_service
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
 
-@router.post("/weekly-report")
-def weekly_report():
-    from fastapi import HTTPException
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@router.post("/weekly-report", response_model=WeeklyReportResponse)
+def weekly_report(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    informe = ai_service.generate_weekly_report(db)
+    return WeeklyReportResponse(informe=informe)
 
 
-@router.post("/stock-analysis")
-def stock_analysis():
-    from fastapi import HTTPException
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+@router.post("/stock-analysis", response_model=StockAnalysisResponse)
+def stock_analysis(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    analisis = ai_service.generate_stock_analysis(db)
+    return StockAnalysisResponse(analisis=analisis)
