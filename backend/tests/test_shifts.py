@@ -104,3 +104,77 @@ class TestHoursSummary:
     def test_summary_employee_not_found(self, db):
         with pytest.raises(ValueError, match="Empleado no encontrado"):
             shift_service.hours_summary(db, 9999, "semana", date(2024, 6, 10))
+
+
+class TestShiftsEndpoints:
+    BASE = "/shifts"
+
+    def test_create_shift(self, client, admin_headers, employee):
+        res = client.post(self.BASE, json={
+            "employee_id": employee.id,
+            "fecha": "2024-06-10",
+            "hora_inicio": "09:00:00",
+            "hora_fin": "17:00:00",
+        }, headers=admin_headers)
+        assert res.status_code == 201
+        data = res.json()
+        assert data["horas_trabajadas"] == "8.00"
+        assert data["employee_id"] == employee.id
+
+    def test_create_shift_invalid_times(self, client, admin_headers, employee):
+        res = client.post(self.BASE, json={
+            "employee_id": employee.id,
+            "fecha": "2024-06-10",
+            "hora_inicio": "17:00:00",
+            "hora_fin": "09:00:00",
+        }, headers=admin_headers)
+        assert res.status_code == 422
+
+    def test_create_shift_cashier_forbidden(self, client, cashier_headers, employee):
+        res = client.post(self.BASE, json={
+            "employee_id": employee.id,
+            "fecha": "2024-06-10",
+            "hora_inicio": "09:00:00",
+            "hora_fin": "17:00:00",
+        }, headers=cashier_headers)
+        assert res.status_code == 403
+
+    def test_list_shifts_no_filter(self, client, admin_headers, shift):
+        res = client.get(self.BASE, headers=admin_headers)
+        assert res.status_code == 200
+        assert any(s["id"] == shift.id for s in res.json())
+
+    def test_list_shifts_filter_by_employee(self, client, admin_headers, shift):
+        res = client.get(self.BASE, params={"employee_id": shift.employee_id},
+                         headers=admin_headers)
+        assert res.status_code == 200
+        assert all(s["employee_id"] == shift.employee_id for s in res.json())
+
+    def test_list_shifts_filter_by_date(self, client, admin_headers, shift):
+        res = client.get(self.BASE,
+                         params={"fecha_inicio": "2024-06-10", "fecha_fin": "2024-06-10"},
+                         headers=admin_headers)
+        assert res.status_code == 200
+        assert any(s["id"] == shift.id for s in res.json())
+
+    def test_get_shift(self, client, admin_headers, shift):
+        res = client.get(f"{self.BASE}/{shift.id}", headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["id"] == shift.id
+
+    def test_get_shift_not_found(self, client, admin_headers):
+        res = client.get(f"{self.BASE}/9999", headers=admin_headers)
+        assert res.status_code == 404
+
+    def test_update_shift(self, client, admin_headers, shift):
+        res = client.put(f"{self.BASE}/{shift.id}",
+                         json={"hora_fin": "18:00:00"},
+                         headers=admin_headers)
+        assert res.status_code == 200
+        assert res.json()["horas_trabajadas"] == "9.00"
+
+    def test_delete_shift(self, client, admin_headers, shift):
+        res = client.delete(f"{self.BASE}/{shift.id}", headers=admin_headers)
+        assert res.status_code == 204
+        res2 = client.get(f"{self.BASE}/{shift.id}", headers=admin_headers)
+        assert res2.status_code == 404
