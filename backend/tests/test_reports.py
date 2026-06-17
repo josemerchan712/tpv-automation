@@ -333,3 +333,35 @@ def test_restock_csv_calculates_cantidad_sugerida(db):
     assert int(rows[0]["stock_actual"]) == 3
     assert int(rows[0]["stock_minimo"]) == 10
     assert int(rows[0]["cantidad_sugerida"]) == 17
+
+
+# ── API: GET /reports/restock-csv ────────────────────────────────────────────
+
+def test_restock_csv_requires_auth(client):
+    resp = client.get("/reports/restock-csv")
+    assert resp.status_code == 401
+
+
+def test_restock_csv_api_only_header_row_when_no_low_stock(client, admin_headers):
+    resp = client.get("/reports/restock-csv", headers=admin_headers)
+    assert resp.status_code == 200
+    assert "text/csv" in resp.headers["content-type"]
+    lines = resp.text.strip().splitlines()
+    assert len(lines) == 1
+    assert lines[0] == "nombre,stock_actual,stock_minimo,cantidad_sugerida"
+
+
+def test_restock_csv_api_contains_low_stock_rows(client, admin_headers, db):
+    # stock=1, stock_minimo=10 → cantidad_sugerida = 10*2 - 1 = 19
+    _make_product(db, nombre="Crítico", stock=1, stock_minimo=10)
+    _make_product(db, nombre="OK", stock=20, stock_minimo=10)
+    resp = client.get("/reports/restock-csv", headers=admin_headers)
+    assert resp.status_code == 200
+    lines = resp.text.strip().splitlines()
+    assert len(lines) == 2   # header + 1 product
+    assert "Crítico" in lines[1]
+    assert "1" in lines[1]
+    assert "10" in lines[1]
+    assert "19" in lines[1]  # cantidad_sugerida
+    assert "content-disposition" in resp.headers
+    assert "attachment" in resp.headers["content-disposition"]
