@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { EmployeeOut, deleteEmployee, getEmployees } from '../api/employees'
 import EmployeeFormModal from '../components/EmployeeFormModal'
+import HoursSummaryPanel from '../components/HoursSummaryPanel'
 
 export default function EmployeesPage() {
   const qc = useQueryClient()
@@ -10,6 +11,7 @@ export default function EmployeesPage() {
     queryFn: getEmployees,
   })
   const [modalEmployee, setModalEmployee] = useState<EmployeeOut | null | 'new'>(null)
+  const [summaryEmployee, setSummaryEmployee] = useState<EmployeeOut | null>(null)
 
   async function handleDelete(emp: EmployeeOut) {
     if (!confirm(`¿Eliminar a ${emp.nombre}?`)) return
@@ -46,6 +48,12 @@ export default function EmployeesPage() {
             </div>
             <div className="flex gap-2">
               <button
+                onClick={() => setSummaryEmployee(emp)}
+                className="px-3 py-1.5 text-xs rounded-lg border hover:bg-slate-50"
+              >
+                Horas
+              </button>
+              <button
                 onClick={() => setModalEmployee(emp)}
                 className="px-3 py-1.5 text-xs rounded-lg border hover:bg-slate-50"
               >
@@ -67,6 +75,13 @@ export default function EmployeesPage() {
           employee={modalEmployee === 'new' ? undefined : modalEmployee}
           onSaved={() => qc.invalidateQueries({ queryKey: ['employees'] })}
           onClose={() => setModalEmployee(null)}
+        />
+      )}
+
+      {summaryEmployee && (
+        <HoursSummaryPanel
+          employee={summaryEmployee}
+          onClose={() => setSummaryEmployee(null)}
         />
       )}
     </div>
