@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { EmployeeOut, HoursSummaryOut, getHoursSummary } from '../api/employees'
+import { type EmployeeOut, type HoursSummaryOut, getHoursSummary } from '../api/employees'
 
 interface Props {
   employee: EmployeeOut

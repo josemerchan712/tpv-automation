@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { EmployeeOut } from '../api/employees'
-import { ShiftCreate, ShiftOut, createShift, updateShift } from '../api/shifts'
+import { type EmployeeOut } from '../api/employees'
+import { type ShiftCreate, type ShiftOut, createShift, updateShift } from '../api/shifts'
 
 interface Props {
   employees: EmployeeOut[]

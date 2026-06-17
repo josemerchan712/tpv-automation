@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getEmployees } from '../api/employees'
-import { ShiftOut, deleteShift, getShifts } from '../api/shifts'
+import { type ShiftOut, deleteShift, getShifts } from '../api/shifts'
 import ShiftFormModal from '../components/ShiftFormModal'
 
 export default function ShiftsPage() {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { EmployeeCreate, EmployeeOut, createEmployee, updateEmployee } from '../api/employees'
+import { type EmployeeCreate, type EmployeeOut, createEmployee, updateEmployee } from '../api/employees'
 
 interface Props {
   employee?: EmployeeOut

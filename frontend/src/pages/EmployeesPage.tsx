@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { EmployeeOut, deleteEmployee, getEmployees } from '../api/employees'
+import { type EmployeeOut, deleteEmployee, getEmployees } from '../api/employees'
 import EmployeeFormModal from '../components/EmployeeFormModal'
 import HoursSummaryPanel from '../components/HoursSummaryPanel'
 
