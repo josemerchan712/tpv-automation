@@ -1,4 +1,3 @@
-import { useAuthStore } from '../store/authStore'
 import { apiClient } from './client'
 
 export interface PaymentBreakdown {
@@ -43,17 +42,7 @@ export const fetchTopProducts = (fechaDesde: string, fechaHasta: string) => {
 }
 
 export async function downloadRestockCsv(): Promise<void> {
-  const token = useAuthStore.getState().token
-  const res = await fetch('/api/reports/restock-csv', {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  })
-  if (res.status === 401) {
-    useAuthStore.getState().logout()
-    window.location.href = '/login'
-    throw new Error('Unauthorized')
-  }
-  if (!res.ok) throw new Error(`Error ${res.status}`)
-  const blob = await res.blob()
+  const blob = await apiClient.getBlob('/reports/restock-csv')
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -61,5 +50,5 @@ export async function downloadRestockCsv(): Promise<void> {
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 100)
 }
