@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import LoginPage from './pages/LoginPage'
 import CatalogPage from './pages/CatalogPage'
 import SalesPage from './pages/SalesPage'
@@ -23,8 +24,10 @@ export default function App() {
               <Route path="/catalogo" element={<CatalogPage />} />
               <Route path="/ventas" element={<SalesPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/empleados" element={<EmployeesPage />} />
-              <Route path="/turnos" element={<ShiftsPage />} />
+              <Route element={<AdminRoute />}>
+                <Route path="/empleados" element={<EmployeesPage />} />
+                <Route path="/turnos" element={<ShiftsPage />} />
+              </Route>
             </Route>
           </Route>
         </Routes>

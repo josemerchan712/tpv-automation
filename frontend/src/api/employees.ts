@@ -55,5 +55,7 @@ export const getHoursSummary = (
   employeeId: number,
   periodo: 'semana' | 'mes',
   fecha: string,
-): Promise<HoursSummaryOut> =>
-  apiClient.get(`/employees/${employeeId}/hours-summary?periodo=${periodo}&fecha=${fecha}`)
+): Promise<HoursSummaryOut> => {
+  const qs = new URLSearchParams({ periodo, fecha })
+  return apiClient.get(`/employees/${employeeId}/hours-summary?${qs}`)
+}
