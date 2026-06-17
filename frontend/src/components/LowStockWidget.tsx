@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchLowStock } from '../api/reports'
+import { fetchLowStock, downloadRestockCsv } from '../api/reports'
 
 export default function LowStockWidget() {
   const { data = [], isLoading, isError } = useQuery({
@@ -7,9 +7,21 @@ export default function LowStockWidget() {
     queryFn: fetchLowStock,
   })
 
+  const handleDownload = () => {
+    downloadRestockCsv().catch(console.error)
+  }
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5">
-      <h2 className="font-semibold text-gray-800 mb-4">Alertas de Stock</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold text-gray-800">Alertas de Stock</h2>
+        <button
+          onClick={handleDownload}
+          className="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          Descargar pedido de reposición
+        </button>
+      </div>
 
       {isLoading && <p className="text-gray-400 text-sm">Cargando...</p>}
       {isError && (
