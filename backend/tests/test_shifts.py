@@ -1,6 +1,6 @@
 import pytest
 from datetime import date, time
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from app.services import shift_service, employee_service
 
 
@@ -67,3 +67,40 @@ class TestShiftService:
         shift = make_shift(db, employee.id)
         shift_service.delete_shift(db, shift.id)
         assert shift_service.get_shift(db, shift.id) is None
+
+
+class TestHoursSummary:
+    def test_weekly_summary_exact(self, db, employee):
+        # employee has 40h/week contracted
+        # Week of 2024-06-10 (Monday) to 2024-06-16 (Sunday)
+        make_shift(db, employee.id, fecha=date(2024, 6, 10))  # 8h
+        make_shift(db, employee.id, fecha=date(2024, 6, 11))  # 8h
+        summary = shift_service.hours_summary(db, employee.id, "semana", date(2024, 6, 12))
+        assert summary["periodo"] == "semana"
+        assert summary["fecha_inicio"] == date(2024, 6, 10)
+        assert summary["fecha_fin"] == date(2024, 6, 16)
+        assert summary["total_horas_trabajadas"] == Decimal("16.00")
+        assert summary["horas_contratadas"] == Decimal("40.00")
+        assert summary["diferencia"] == Decimal("-24.00")
+
+    def test_weekly_summary_over_hours(self, db, employee):
+        for d in [10, 11, 12, 13, 14, 15]:
+            make_shift(db, employee.id, fecha=date(2024, 6, d))  # 6 × 8h = 48h
+        summary = shift_service.hours_summary(db, employee.id, "semana", date(2024, 6, 10))
+        assert summary["diferencia"] == Decimal("8.00")
+
+    def test_monthly_summary(self, db, employee):
+        make_shift(db, employee.id, fecha=date(2024, 6, 10))   # 8h
+        make_shift(db, employee.id, fecha=date(2024, 6, 20))   # 8h
+        summary = shift_service.hours_summary(db, employee.id, "mes", date(2024, 6, 15))
+        assert summary["fecha_inicio"] == date(2024, 6, 1)
+        assert summary["fecha_fin"] == date(2024, 6, 30)
+        assert summary["total_horas_trabajadas"] == Decimal("16.00")
+        expected_contracted = (Decimal("40.00") * Decimal("30") / Decimal("7")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        assert summary["horas_contratadas"] == expected_contracted
+
+    def test_summary_employee_not_found(self, db):
+        with pytest.raises(ValueError, match="Empleado no encontrado"):
+            shift_service.hours_summary(db, 9999, "semana", date(2024, 6, 10))

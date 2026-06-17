@@ -1,4 +1,5 @@
-from datetime import date, time, datetime
+from calendar import monthrange
+from datetime import date, time, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 from sqlalchemy.orm import Session
@@ -70,3 +71,38 @@ def delete_shift(db: Session, shift_id: int) -> None:
     if shift:
         db.delete(shift)
         db.commit()
+
+
+def hours_summary(db: Session, employee_id: int, periodo: str, fecha: date) -> dict:
+    from app.services.employee_service import get_employee
+    emp = get_employee(db, employee_id)
+    if not emp:
+        raise ValueError("Empleado no encontrado")
+
+    if periodo == "semana":
+        day_of_week = fecha.weekday()  # 0=Monday
+        fecha_inicio = fecha - timedelta(days=day_of_week)
+        fecha_fin = fecha_inicio + timedelta(days=6)
+        horas_contratadas = emp.horas_semanales_contratadas
+    else:  # mes
+        fecha_inicio = fecha.replace(day=1)
+        last_day = monthrange(fecha.year, fecha.month)[1]
+        fecha_fin = fecha.replace(day=last_day)
+        days = Decimal(str((fecha_fin - fecha_inicio).days + 1))
+        horas_contratadas = (emp.horas_semanales_contratadas * days / Decimal("7")).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
+    shifts = get_shifts(db, employee_id=employee_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin)
+    total = sum((s.horas_trabajadas for s in shifts), Decimal("0.00"))
+
+    return {
+        "employee_id": employee_id,
+        "nombre": emp.nombre,
+        "periodo": periodo,
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+        "total_horas_trabajadas": total,
+        "horas_contratadas": horas_contratadas,
+        "diferencia": total - horas_contratadas,
+    }
