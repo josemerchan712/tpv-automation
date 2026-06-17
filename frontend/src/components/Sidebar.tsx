@@ -57,6 +57,36 @@ export default function Sidebar() {
         >
           Ventas
         </NavLink>
+
+        {user?.role === 'admin' && (
+          <>
+            <NavLink
+              to="/empleados"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`
+              }
+            >
+              Empleados
+            </NavLink>
+
+            <NavLink
+              to="/turnos"
+              className={({ isActive }) =>
+                `flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-indigo-50 text-indigo-700'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`
+              }
+            >
+              Turnos
+            </NavLink>
+          </>
+        )}
       </nav>
 
       <div className="p-3 border-t border-gray-200">
