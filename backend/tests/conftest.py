@@ -102,3 +102,16 @@ def employee(db):
         horas_semanales_contratadas=Decimal("40.00"),
         fecha_alta=date(2024, 1, 1),
     )
+
+
+@pytest.fixture
+def shift(db, employee):
+    from app.services.shift_service import create_shift
+    from datetime import date, time
+    return create_shift(
+        db,
+        employee_id=employee.id,
+        fecha=date(2024, 6, 10),
+        hora_inicio=time(9, 0),
+        hora_fin=time(17, 0),
+    )
