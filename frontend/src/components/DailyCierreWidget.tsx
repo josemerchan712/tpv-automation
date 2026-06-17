@@ -7,7 +7,10 @@ function todayStr() {
 }
 
 function fmt(value: string) {
-  return parseFloat(value).toFixed(2)
+  return parseFloat(value).toLocaleString('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+  })
 }
 
 export default function DailyCierreWidget() {
@@ -45,7 +48,7 @@ export default function DailyCierreWidget() {
           <div className="flex items-end gap-6 mb-4">
             <div>
               <p className="text-3xl font-bold text-gray-900">
-                {fmt(data.total_ventas)} €
+                {fmt(data.total_ventas)}
               </p>
               <p className="text-sm text-gray-500 mt-1">Total ventas</p>
             </div>
@@ -66,7 +69,7 @@ export default function DailyCierreWidget() {
                   <tr key={method} className="border-b border-gray-50 last:border-0">
                     <td className="py-1.5 capitalize text-gray-700">{method}</td>
                     <td className="py-1.5 text-right font-medium text-gray-900">
-                      {fmt(data.desglose_pago[method])} €
+                      {fmt(data.desglose_pago[method])}
                     </td>
                   </tr>
                 ))}
