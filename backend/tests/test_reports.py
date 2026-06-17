@@ -294,3 +294,75 @@ def test_top_products_api_date_filter(client, admin_headers, db):
     resp = client.get(f"/reports/top-products?fecha_hasta={yesterday}", headers=admin_headers)
     assert resp.status_code == 200
     assert resp.json() == []
+
+
+# ── get_restock_csv ──────────────────────────────────────────────────────────
+
+def test_restock_csv_only_header_when_no_low_stock(db):
+    from app.services.report_service import get_restock_csv
+    _make_product(db, nombre="OK", stock=20, stock_minimo=10)
+    content = get_restock_csv(db)
+    lines = content.strip().splitlines()
+    assert len(lines) == 1
+    assert lines[0] == "nombre,stock_actual,stock_minimo,cantidad_sugerida"
+
+
+def test_restock_csv_excludes_products_at_or_above_min(db):
+    import csv, io
+    from app.services.report_service import get_restock_csv
+    _make_product(db, nombre="Bajo", stock=3, stock_minimo=10)
+    _make_product(db, nombre="Justo", stock=10, stock_minimo=10)
+    _make_product(db, nombre="Bien", stock=20, stock_minimo=10)
+    content = get_restock_csv(db)
+    reader = csv.DictReader(io.StringIO(content))
+    rows = list(reader)
+    assert len(rows) == 1
+    assert rows[0]["nombre"] == "Bajo"
+
+
+def test_restock_csv_calculates_cantidad_sugerida(db):
+    import csv, io
+    from app.services.report_service import get_restock_csv
+    # stock=3, stock_minimo=10 → cantidad_sugerida = 10*2 - 3 = 17
+    _make_product(db, nombre="Leche", stock=3, stock_minimo=10)
+    content = get_restock_csv(db)
+    reader = csv.DictReader(io.StringIO(content))
+    rows = list(reader)
+    assert rows[0]["nombre"] == "Leche"
+    assert int(rows[0]["stock_actual"]) == 3
+    assert int(rows[0]["stock_minimo"]) == 10
+    assert int(rows[0]["cantidad_sugerida"]) == 17
+
+
+# ── API: GET /reports/restock-csv ────────────────────────────────────────────
+
+def test_restock_csv_requires_auth(client):
+    resp = client.get("/reports/restock-csv")
+    assert resp.status_code == 401
+
+
+def test_restock_csv_api_only_header_row_when_no_low_stock(client, admin_headers):
+    resp = client.get("/reports/restock-csv", headers=admin_headers)
+    assert resp.status_code == 200
+    assert "text/csv" in resp.headers["content-type"]
+    lines = resp.text.strip().splitlines()
+    assert len(lines) == 1
+    assert lines[0] == "nombre,stock_actual,stock_minimo,cantidad_sugerida"
+
+
+def test_restock_csv_api_contains_low_stock_rows(client, admin_headers, db):
+    import csv, io
+    # stock=1, stock_minimo=10 → cantidad_sugerida = 10*2 - 1 = 19
+    _make_product(db, nombre="Crítico", stock=1, stock_minimo=10)
+    _make_product(db, nombre="OK", stock=20, stock_minimo=10)
+    resp = client.get("/reports/restock-csv", headers=admin_headers)
+    assert resp.status_code == 200
+    reader = csv.DictReader(io.StringIO(resp.text))
+    rows = list(reader)
+    assert len(rows) == 1
+    assert rows[0]["nombre"] == "Crítico"
+    assert int(rows[0]["stock_actual"]) == 1
+    assert int(rows[0]["stock_minimo"]) == 10
+    assert int(rows[0]["cantidad_sugerida"]) == 19
+    assert "content-disposition" in resp.headers
+    assert "attachment" in resp.headers["content-disposition"]

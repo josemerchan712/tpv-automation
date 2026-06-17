@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -38,3 +38,16 @@ def get_top_products(
     _: User = Depends(get_current_user),
 ):
     return report_service.get_top_products(db, fecha_desde=fecha_desde, fecha_hasta=fecha_hasta)
+
+
+@router.get("/restock-csv", response_class=Response)
+def get_restock_csv(
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    content = report_service.get_restock_csv(db)
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=restock.csv"},
+    )

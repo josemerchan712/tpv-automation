@@ -40,3 +40,15 @@ export const fetchTopProducts = (fechaDesde: string, fechaHasta: string) => {
   const params = new URLSearchParams({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta })
   return apiClient.get<TopProductOut[]>(`/reports/top-products?${params}`)
 }
+
+export async function downloadRestockCsv(): Promise<void> {
+  const blob = await apiClient.getBlob('/reports/restock-csv')
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'restock.csv'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 100)
+}

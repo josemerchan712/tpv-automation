@@ -1,3 +1,5 @@
+import csv
+import io
 from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from sqlalchemy import func
@@ -73,3 +75,19 @@ def get_top_products(
         )
         for row in rows
     ]
+
+
+def get_restock_csv(db: Session) -> str:
+    products = (
+        db.query(Product)
+        .filter(Product.stock < Product.stock_minimo)
+        .order_by(Product.nombre)
+        .all()
+    )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["nombre", "stock_actual", "stock_minimo", "cantidad_sugerida"])
+    for p in products:
+        cantidad_sugerida = p.stock_minimo * 2 - p.stock
+        writer.writerow([p.nombre, p.stock, p.stock_minimo, cantidad_sugerida])
+    return output.getvalue()
