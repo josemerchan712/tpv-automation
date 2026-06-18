@@ -2,6 +2,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import DailyCierreWidget from '../components/DailyCierreWidget'
 import LowStockWidget from '../components/LowStockWidget'
 import TopProductsWidget from '../components/TopProductsWidget'
+import AIWeeklyReportCard from '../components/AIWeeklyReportCard'
+import AIStockAnalysisCard from '../components/AIStockAnalysisCard'
 
 export default function DashboardPage() {
   const queryClient = useQueryClient()
@@ -27,6 +29,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LowStockWidget />
         <TopProductsWidget />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AIWeeklyReportCard />
+        <AIStockAnalysisCard />
       </div>
     </div>
   )
