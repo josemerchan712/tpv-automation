@@ -88,3 +88,30 @@ def cashier_headers(client, cashier_user):
     )
     token = resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def employee(db):
+    from app.services.employee_service import create_employee
+    from datetime import date
+    from decimal import Decimal
+    return create_employee(
+        db,
+        nombre="Test Employee",
+        puesto="Cajero",
+        horas_semanales_contratadas=Decimal("40.00"),
+        fecha_alta=date(2024, 1, 1),
+    )
+
+
+@pytest.fixture
+def shift(db, employee):
+    from app.services.shift_service import create_shift
+    from datetime import date, time
+    return create_shift(
+        db,
+        employee_id=employee.id,
+        fecha=date(2024, 6, 10),
+        hora_inicio=time(9, 0),
+        hora_fin=time(17, 0),
+    )

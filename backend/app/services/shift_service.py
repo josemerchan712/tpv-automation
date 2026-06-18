@@ -9,7 +9,7 @@ from app.models.employee import Shift
 def _compute_hours(hora_inicio: time, hora_fin: time) -> Decimal:
     base_date = datetime(2000, 1, 1)
     delta = datetime.combine(base_date.date(), hora_fin) - datetime.combine(base_date.date(), hora_inicio)
-    hours = Decimal(str(delta.seconds / 3600)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    hours = Decimal(str(delta.total_seconds() / 3600)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     return hours
 
 
@@ -58,8 +58,7 @@ def update_shift(db: Session, shift_id: int, data: dict) -> Optional[Shift]:
     if not shift:
         return None
     for key, value in data.items():
-        if value is not None:
-            setattr(shift, key, value)
+        setattr(shift, key, value)
     shift.horas_trabajadas = _compute_hours(shift.hora_inicio, shift.hora_fin)
     db.commit()
     db.refresh(shift)
@@ -94,7 +93,7 @@ def hours_summary(db: Session, employee_id: int, periodo: str, fecha: date) -> d
         )
 
     shifts = get_shifts(db, employee_id=employee_id, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin)
-    total = sum((s.horas_trabajadas for s in shifts), Decimal("0.00"))
+    total = sum((Decimal(str(s.horas_trabajadas)) for s in shifts), Decimal("0.00"))
 
     return {
         "employee_id": employee_id,

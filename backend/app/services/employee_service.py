@@ -39,8 +39,7 @@ def update_employee(db: Session, employee_id: int, data: dict) -> Optional[Emplo
     if not emp:
         return None
     for key, value in data.items():
-        if value is not None:
-            setattr(emp, key, value)
+        setattr(emp, key, value)
     db.commit()
     db.refresh(emp)
     return emp
